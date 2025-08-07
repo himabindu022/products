@@ -3,17 +3,18 @@ import products from './products'
 import ProductList from './components/productList';
 import { useState } from 'react';
 
+const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 
+console.log("API Key:", apiKey);
 function App() {
   const [input, setInput] = useState('')
   const [recommendations, setRecommendations] = useState([])
-  const [loading, setLoading] = useState(false);
+  //const [loading, setLoading] = useState(false);
 
   const handleInputSubmit = (e) => setInput(e.target.value)
 
   const fetchRecommendations = async() => {
-      if (loading) return;
-        setLoading(true);
+     
       const data = products
         .map(p => `${p.name}- $${p.price}-${p.category}`)
         .join('')
@@ -68,9 +69,7 @@ function App() {
         onChange={handleInputSubmit}
         placeholder="E.g. I want a phone under $500"
       />
-      <button onClick={fetchRecommendations} disabled={loading}>
-        {loading ? "Loading..." : "Get Recommendations"}
-      </button>
+      <button onClick={fetchRecommendations}>recommendations</button>
       <h2>Recommended Products:</h2>
       <ProductList products={recommendations} />
     </div>
