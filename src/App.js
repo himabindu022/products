@@ -9,20 +9,15 @@ console.log("API Key:", apiKey);
 function App() {
   const [input, setInput] = useState('')
   const [recommendations, setRecommendations] = useState([])
+  const [errorMessage, setErrorMessage] = useState('');
+
   //const [loading, setLoading] = useState(false);
 
   const handleInputSubmit = (e) => setInput(e.target.value)
 
   const fetchRecommendations = async() => {
-     
-    if (res.status === 429) {
-      if (retries > 0) {
-        await new Promise(r => setTimeout(r, delay));
-        return fetchWithRetry(url, options, retries - 1, delay * 2);
-      } else {
-        throw new Error("Rate limit exceeded, retries exhausted");
-      }
-    }
+      setErrorMessage('');
+    
       const data = products
         .map(p => `${p.name}- $${p.price}-${p.category}`)
         .join('')
@@ -31,7 +26,7 @@ function App() {
 
       try {
         console.log('OpenAI API Key:', process.env.REACT_APP_OPENAI_API_KEY);
-
+        
         const res = await fetch("https://api.openai.com/v1/chat/completions", {
           method: 'POST',
           headers: {
@@ -48,6 +43,13 @@ function App() {
           })
         })
 
+        if (!res.ok) {
+          const errorData = await res.json();
+          setErrorMessage(errorData.error?.message || 'Unknown error occurred');
+          return;
+
+        }
+
         const response = await res.json();
         console.log(response)
 
@@ -61,8 +63,9 @@ function App() {
 
     } catch (error) {
         if (error.status === 429) {
-          alert("You've hit the API rate limit. Please wait and try again later.");
+           setErrorMessage("You've hit the API rate limit. Please wait and try again later.");
         } else {
+          setErrorMessage(error.message || 'Failed to fetch recommendations');
           console.error(error);
         }
     }
@@ -80,7 +83,9 @@ function App() {
       <button onClick={fetchRecommendations}>recommendations</button>
       <h2>Recommended Products:</h2>
       <ProductList products={recommendations} />
+      {errorMessage && <p style={{ color: 'red', marginTop: '1rem' }}>Error: {errorMessage}</p>}
     </div>
+    
   );
 }
 
