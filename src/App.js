@@ -43,7 +43,7 @@ function App() {
         const response = await res.json();
         console.log(response)
 
-        const aiText = data.choices?.[0]?.message?.content || '';
+        const aiText = response.choices?.[0]?.message?.content || '';
 
         const matchedProducts = products.filter(product =>
           aiText.toLowerCase().includes(product.name.toLowerCase())
