@@ -15,6 +15,14 @@ function App() {
 
   const fetchRecommendations = async() => {
      
+    if (res.status === 429) {
+      if (retries > 0) {
+        await new Promise(r => setTimeout(r, delay));
+        return fetchWithRetry(url, options, retries - 1, delay * 2);
+      } else {
+        throw new Error("Rate limit exceeded, retries exhausted");
+      }
+    }
       const data = products
         .map(p => `${p.name}- $${p.price}-${p.category}`)
         .join('')
