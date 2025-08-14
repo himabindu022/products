@@ -15,61 +15,48 @@ function App() {
 
   const handleInputSubmit = (e) => setInput(e.target.value)
 
-  const fetchRecommendations = async() => {
-      setErrorMessage('');
-    
-      const data = products
-        .map(p => `${p.name}- $${p.price}-${p.category}`)
-        .join('')
-    
-      const prompt = `Here is a list of products:\n${data}\n\nUser preference: "${input}".\nRecommend the best matching products. Return only product names.`;
+const fetchRecommendations = async () => {
+  const data = products
+    .map(p => `${p.name} - $${p.price} - ${p.category}`)
+    .join('\n');
 
-      try {
-        console.log('OpenAI API Key:', process.env.REACT_APP_OPENAI_API_KEY);
-        
-        const res = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: 'POST',
-          headers: {
-            'Content-Type': "application/json",
-            Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`
-          },
-          body: JSON.stringify({
-            model: "gpt-3.5-turbo",
-            messages: [
-              { role: "system", content: "You are a helpful AI that recommends products based on user preferences." },
-              { role: "user", content: prompt }
-            ],
-            temperature: 0.7
-          })
-        })
+  const prompt = `Here is a list of products:\n${data}\n\nUser preference: "${input}".\nRecommend the best matching products. Return only product names as a comma-separated list.`;
+  try {
+    const res = await fetch('http://localhost:3000/api/v1/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt }),  // ✅ send only the prompt
+    });
 
-        if (!res.ok) {
-          const errorData = await res.json();
-          setErrorMessage(errorData.error?.message || 'Unknown error occurred');
-          return;
-
-        }
-
-        const response = await res.json();
-        console.log(response)
-
-        const aiText = response.choices?.[0]?.message?.content || '';
-
-        const matchedProducts = products.filter(product =>
-          aiText.toLowerCase().includes(product.name.toLowerCase())
-      );
-
-      setRecommendations(matchedProducts);
-
-    } catch (error) {
-        if (error.status === 429) {
-           setErrorMessage("You've hit the API rate limit. Please wait and try again later.");
-        } else {
-          setErrorMessage(error.message || 'Failed to fetch recommendations');
-          console.error(error);
-        }
+    if (!res.ok) {
+      if (res.status === 429) {
+        throw new Error('Rate limit exceeded. Please wait and try again.');
+      }
+      const error = await res.json();
+      throw new Error(error.error || 'Unknown error');
     }
-  };
+
+    const data = await res.json();
+    console.log('AI response:', data.result);
+
+    // Parse result to match products
+    const aiText = data.result;
+    const matchedProducts = products.filter(product =>
+      aiText.toLowerCase().includes(product.name.toLowerCase())
+    );
+
+    setRecommendations(matchedProducts);
+  } catch (err) {
+    if (err.message.includes('Rate limit exceeded')) {
+      setRecommendations(products.slice(0, 5));  // Show top 5 products or any preset list
+    } else {
+      setErrorMessage(err.message);
+      setRecommendations([]);
+    }
+  } 
+};
 
   return (
     <div className="App">
@@ -85,7 +72,6 @@ function App() {
       <ProductList products={recommendations} />
       {errorMessage && <p style={{ color: 'red', marginTop: '1rem' }}>Error: {errorMessage}</p>}
     </div>
-    
   );
 }
 

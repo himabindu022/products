@@ -1,17 +1,18 @@
 import React from 'react'
 
-const productList = ({products}) => {
-    if(!products.lenght) 
-        return <p>NO recommendations found</p>
+const ProductList = ({ products }) => {
+  if (!products || products.length === 0) {
+    return <p>No recommendations found</p>;
+  }
+
   return (
     <ul>
-        { products.map((products)=> (
-            <li key={products.id}>
-                <strong>{products.name}</strong> - ${products.price} ({products.category})
-            </li>
-        ))}
+      {products.map((product, index) => (
+        <li key={index}>{product.name} - ${product.price}</li>
+      ))}
     </ul>
-  )
-}
+  );
+};
 
-export default productList
+
+export default ProductList
